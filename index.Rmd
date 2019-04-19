@@ -1,0 +1,158 @@
+---
+title: "TSP for Brazilian State Capitals"
+author: Dan S. Reznik
+date: Abril, 2019
+output: 
+  html_document:
+    mathjax: null
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: united
+    df_print: paged
+    highlight: tango
+    code_folding: show
+---
+
+```{r,echo=F}
+knitr::opts_chunk$set(
+  cache=T,
+  collapse=T,
+  comment="#>",
+  dpi=96,
+  out.width='100%'
+)
+```
+
+### Load libraries
+
+```{r,message=F}
+library(tidyverse)
+library(tspmeta)
+library(ggmap)
+library(sp)
+library(stringi)
+library(gridExtra)
+library(grid)
+detach("package:dplyr", character.only = TRUE)
+library("dplyr", character.only = TRUE) # MASS::select() conflict
+library(maptools)
+source("tsp_utils.R")
+```
+
+### Get brazilian capitals [lat/lon](http://relogiosdesol.blogspot.com.br/2009/11/coordenadas-geograficas-das-capitas-dos.html)
+
+```{r,message=F}
+capitais <- read_csv("data/capitais.csv")
+```
+
+### Construct a TSP object.
+
+Returns TSP solver methods
+
+```{r}
+get_solvers()
+```
+
+Specifies TSP engine's full path
+
+```{r}
+# TSP::concorde_path("./concorde")
+TSP::concorde_path(getwd() %s+% "/../concorde")
+```
+
+Tests `concorde` and `2-opt` methods in point lattice
+
+```{r}
+test_df <- tibble(x=seq(0,1,.1),y=seq(0,1,.1))%>%expand(x,y)
+test_tour <- get_tour(test_df,method="concorde")
+test_tour_2_opt <- get_tour(test_df,method="2-opt")
+```
+
+Plots found tours
+
+```{r}
+p1 <- plot_tour(test_df,test_tour,"red","concorde")
+p2 <- plot_tour(test_df,test_tour_2_opt,"green","2-opt")
+grid.arrange(p1, p2, ncol = 2)
+```
+
+```{r,include=F}
+{
+  p12 <- arrangeGrob(p2,p1,ncol=2) #generates g
+  ggsave("./pics/tsp 2-opt vs concorde.png",p12) #,width=10,height=10)
+}
+```
+
+### Brazilian Capitals Tour
+
+Start tour at Rio's index
+
+```{r}
+capitais%>%filter(uf=="RJ")
+```
+
+Compute state capital tour using `2-opt` and `concorde` methods
+
+Note: seems "start" is being ignored by concorde
+
+```{r}
+capitais_tsp_2_opt <- get_tour(capitais%>%select(x=lon_dec,y=lat_dec),
+                               method="2-opt")
+capitais_tsp <- get_tour(capitais%>%select(x=lon_dec,y=lat_dec),
+                         method="concorde",
+                         start=22)
+
+capitais_tsp_prep_2_opt <- process_tour(capitais_tsp_2_opt,capitais)
+capitais_tsp_prep <- process_tour(capitais_tsp,capitais)
+```
+
+Plot the results
+
+```{r}
+b1 <- plot_tour(capitais%>%select(x=lon_dec,y=lat_dec),
+                capitais_tsp,"red","concorde")
+b2 <- plot_tour(capitais%>%select(x=lon_dec,y=lat_dec),
+                capitais_tsp_2_opt,"green","2-opt")
+grid.arrange(b2, b1, ncol = 2)
+```
+
+```{r,include=F}
+{
+  b12 <- arrangeGrob(b2,b1,ncol=2) #generates g
+  ggsave("./pics/tsp 2-opt vs concorde brasil.png",b12) #,width=10,height=10)
+}
+```
+
+Load Brazil shape file
+
+```{r,message=F,}
+# area <- readShapePoly("data/BRUFE250GC_SIR.shp") %>% fortify
+area <- rgdal::readOGR('data/BRUFE250GC_SIR.shp') %>% fortify
+```
+
+Show `concorde` path in blue and `2-opt` path (somewhat jittered) in green.
+
+```{r}
+area %>%
+  ggplot(aes(x = long, y = lat)) +
+  geom_polygon(aes(group=group),fill=NA,color="gray",size=I(1)) +
+  geom_polygon(aes(lon_dec,lat_dec),
+          color="blue",fill=NA,
+          data=capitais_tsp_prep) +
+    geom_polygon(aes(lon_dec,lat_dec),
+          color="green",fill=NA,
+          position=position_jitter(1),
+          data=capitais_tsp_prep_2_opt) +
+  geom_point(aes(lon_dec,lat_dec),
+             color = "red", size = 2,
+             data = capitais) +
+  geom_text(aes(lon_dec,lat_dec,label=cidade),
+            data=capitais,vjust=-1,size=3) +
+  labs(x = "Longitude", y = "Latitude") +
+  coord_fixed()
+```
+
+```{r,include=F}
+ggsave("./pics/tsp brazil ibge state polygons.png",height=10,width=10)
+```
