@@ -5,4 +5,4 @@ We use the [concorde](http://www.math.uwaterloo.ca/tsp/concorde.html) library to
 
 <img src="pics/tsp brazil ibge state polygons.png" width="50%" style="display: block; margin: auto;" />
 
-Coding details can be found [here](dan-reznik.githubio.com/TS-Brazilian-Capitals)
+Coding details can be found [here](https://dan-reznik.github.io/TSP-Brazilian-Capitals)

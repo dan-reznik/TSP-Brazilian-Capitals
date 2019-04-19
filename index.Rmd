@@ -14,6 +14,8 @@ output:
     code_folding: show
 ---
 
+This project's [repo](https://github.com/dan-reznik/TSP-Brazilian-Capitals)
+
 ```{r,echo=F}
 knitr::opts_chunk$set(
   cache=T,

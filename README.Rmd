@@ -21,4 +21,4 @@ We use the [concorde](http://www.math.uwaterloo.ca/tsp/concorde.html) library to
 knitr::include_graphics("pics/tsp brazil ibge state polygons.png")
 ```
 
-Coding details can be found [here](dan-reznik.githubio.com/TS-Brazilian-Capitals)
+Coding details can be found [here](https://dan-reznik.github.io/TSP-Brazilian-Capitals)
